@@ -134,12 +134,44 @@ class QRGeneratorApp:
 
     
     def export_png(self):
-        # TODO: implement
-        pass
+        if not self.qr_image:
+            return
+        
+        # File dialog do wyboru gdzie zapisać
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png"), ("All files", "*.*")]
+        )
+        
+        if filepath:
+            self.qr_image.save(filepath)
+            print(f"Zapisano: {filepath}")
     
     def copy_to_clipboard(self):
-        # TODO: implement
-        pass
+        if not self.qr_image:
+            return
+        
+        # Konwertujemy do bytes
+        output = io.BytesIO()
+        self.qr_image.save(output, format='PNG')
+        
+        # Na macOS używamy osascript do skopiowania obrazu
+        import subprocess
+        import base64
+        
+        img_base64 = base64.b64encode(output.getvalue()).decode()
+        
+        # AppleScript do kopiowania obrazu
+        script = f'''
+        set the clipboard to (read (POSIX file "/tmp/qr_temp.png") as «class PNGf»)
+        '''
+        
+        # Zapisujemy temp file i kopiujemy
+        temp_path = "/tmp/qr_temp.png"
+        self.qr_image.save(temp_path)
+        
+        subprocess.run(['osascript', '-e', script])
+        print("Skopiowano do schowka!")
 
 if __name__ == "__main__":
     root = tk.Tk()
