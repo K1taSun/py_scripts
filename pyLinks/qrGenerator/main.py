@@ -82,8 +82,56 @@ class QRGeneratorApp:
             self.color_var.set(color[1])
     
     def generate_qr(self):
-        # TODO: implement
-        pass
+        link = self.link_entry.get().strip()
+        if not link:
+            self.preview_label.config(text="Wpisz link!")
+            return
+        
+        # Tworzymy QR
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4 if self.frame_var.get() else 2,
+        )
+        qr.add_data(link)
+        qr.make(fit=True)
+        
+        # Pobieramy kolor
+        fill_color = self.color_var.get()
+        back_color = "white"
+        
+        # Generujemy obrazek
+        if self.style_var.get() == "square":
+            img = qr.make_image(fill_color=fill_color, back_color=back_color)
+        elif self.style_var.get() == "rounded":
+            # rounded corners na modułach
+            img = qr.make_image(fill_color=fill_color, back_color=back_color,
+                               module_drawer=qrcode.image.styles.moduledrawers.RoundedModuleDrawer())
+        else:  # gapped
+            img = qr.make_image(fill_color=fill_color, back_color=back_color,
+                               module_drawer=qrcode.image.styles.moduledrawers.GappedSquareModuleDrawer())
+        
+        # Ramka
+        if self.frame_var.get():
+            from PIL import ImageDraw
+            img_with_frame = Image.new('RGB', 
+                                       (img.size[0] + 20, img.size[1] + 20), 
+                                       self.frame_color_var.get())
+            img_with_frame.paste(img, (10, 10))
+            img = img_with_frame
+        
+        self.qr_image = img
+        
+        # Preview
+        # Resize do 300x300 dla GUI
+        preview_img = img.copy()
+        preview_img.thumbnail((300, 300), Image.Resampling.LANCZOS)
+        photo = ImageTk.PhotoImage(preview_img)
+        
+        self.preview_label.config(image=photo, text="")
+        self.preview_label.image = photo  # keep reference
+
     
     def export_png(self):
         # TODO: implement
